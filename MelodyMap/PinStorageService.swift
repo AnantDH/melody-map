@@ -23,7 +23,7 @@ class PinStorageService {
             let data = try JSONEncoder().encode(pins)
             try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
         } catch {
-            print("❌ Failed to save MelodyPins: \(error)")
+            print("Failed to save MelodyPins: \(error)")
         }
     }
 
@@ -34,7 +34,7 @@ class PinStorageService {
             let pins = try JSONDecoder().decode([MelodyPin].self, from: data)
             return pins
         } catch {
-            print("⚠️ No saved pins found or failed to load: \(error)")
+            print("No saved pins found or failed to load: \(error)")
             return []
         }
     }
