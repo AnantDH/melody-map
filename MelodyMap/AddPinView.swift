@@ -11,38 +11,63 @@ import CoreLocation
 struct AddPinView: View {
     let coordinate: CLLocationCoordinate2D
     var onSave: (MelodyPin) -> Void
+    @Environment(\.presentationMode) var presentationMode
 
     @State private var query = ""
     @State private var results: [DeezerSong] = []
     @State private var selectedSong: DeezerSong?
     @State private var note = ""
+    @State private var isLoading = false
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationView {
             VStack {
-                TextField("Search for a song", text: $query, onCommit: searchDeezer)
+                TextField("Search for a song", text: $query)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.horizontal)
                     .padding(.top)
-
-                List(results) { song in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(song.title)
-                                .fontWeight(.semibold)
-                            Text(song.artist.name)
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                        }
-                        Spacer()
-                        if song.id == selectedSong?.id {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
-                        }
+                    .onSubmit {
+                        searchDeezer()
                     }
-                    .contentShape(Rectangle()) // Make full row tappable
-                    .onTapGesture {
-                        selectedSong = song
+
+                if isLoading {
+                    ProgressView()
+                        .padding()
+                } else if let error = errorMessage {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .padding()
+                } else {
+                    List(results) { song in
+                        HStack {
+                            AsyncImage(url: URL(string: song.album.cover_medium)) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            } placeholder: {
+                                Color.gray
+                            }
+                            .frame(width: 50, height: 50)
+                            .cornerRadius(4)
+
+                            VStack(alignment: .leading) {
+                                Text(song.title)
+                                    .fontWeight(.semibold)
+                                Text(song.artist.name)
+                                    .font(.subheadline)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            if song.id == selectedSong?.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedSong = song
+                        }
                     }
                 }
 
@@ -54,7 +79,7 @@ struct AddPinView: View {
 
                 Button("Save MelodyPin") {
                     if let song = selectedSong {
-                        let pin = MelodyPin(song: song, coordinate: coordinate, note: note)
+                        let pin = MelodyPin(song: song, coordinate: coordinate, note: note.isEmpty ? nil : note)
                         onSave(pin)
                     }
                 }
@@ -65,31 +90,49 @@ struct AddPinView: View {
             }
             .navigationTitle("Add MelodyPin")
             .navigationBarItems(trailing: Button("Cancel") {
-                onSave(MelodyPin(song: DeezerSong(id: -1, title: "", artist: DeezerArtist(name: ""), album: DeezerAlbum(cover_medium: ""), preview: nil), coordinate: coordinate)) // discard
+                presentationMode.wrappedValue.dismiss()
             })
         }
     }
 
     func searchDeezer() {
         guard !query.isEmpty else { return }
-
+        
+        isLoading = true
+        errorMessage = nil
+        
         let formattedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "https://api.deezer.com/search?q=\(formattedQuery)"
 
-        guard let url = URL(string: urlString) else { return }
+        guard let url = URL(string: urlString) else {
+            errorMessage = "Invalid search URL"
+            isLoading = false
+            return
+        }
 
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            if let data = data {
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                isLoading = false
+                
+                if let error = error {
+                    errorMessage = "Search failed: \(error.localizedDescription)"
+                    return
+                }
+                
+                guard let data = data else {
+                    errorMessage = "No data received"
+                    return
+                }
+                
                 do {
                     let decoded = try JSONDecoder().decode(DeezerSearchResponse.self, from: data)
-                    DispatchQueue.main.async {
-                        self.results = decoded.data
+                    self.results = decoded.data
+                    if self.results.isEmpty {
+                        errorMessage = "No songs found"
                     }
                 } catch {
-                    print("Decode error: \(error)")
+                    errorMessage = "Failed to decode results"
                 }
-            } else {
-                print("Network error: \(error?.localizedDescription ?? "Unknown error")")
             }
         }.resume()
     }
