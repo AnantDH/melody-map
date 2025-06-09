@@ -30,16 +30,17 @@ struct MapView: View {
                     }
                 }
                 .mapStyle(.standard)
+                .onTapGesture {
+                    guard isSelectingLocation else { return }
+                    // Use the current map center as the selected location
+                    if let region = visibleRegion {
+                        selectedLocation = region.center
+                        showingAddPin = true
+                        isSelectingLocation = false
+                    }
+                }
                 .onMapCameraChange { context in
                     visibleRegion = context.region
-                }
-                .onTapGesture { location in
-                    if isSelectingLocation {
-                        if let region = visibleRegion {
-                            selectedLocation = region.center
-                            showingAddPin = true
-                        }
-                    }
                 }
                 .overlay(
                     Group {

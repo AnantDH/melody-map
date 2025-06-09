@@ -20,7 +20,7 @@ struct AddPlaylistView: View {
                 TextField("Search songs...", text: $searchQuery)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.horizontal)
-                    .onChange(of: searchQuery) { _ in
+                    .onChange(of: searchQuery) { oldValue, newValue in
                         searchDeezer()
                     }
                 
