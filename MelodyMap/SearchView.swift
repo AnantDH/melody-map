@@ -23,6 +23,7 @@ struct SearchView: View {
                     Button("Go") {
                         searchDeezer()
                     }
+                    .padding(.trailing, 20)
                 }
                 .padding(.top)
 
