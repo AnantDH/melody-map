@@ -61,7 +61,7 @@ struct HomeView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Playlists")
+            .navigationTitle("Welcome")
             .sheet(isPresented: $showingAddPlaylist) {
                 AddPlaylistView { newPlaylist in
                     playlists.append(newPlaylist)
