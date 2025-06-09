@@ -44,7 +44,7 @@ struct MapView: View {
                 .overlay(
                     Group {
                         if isSelectingLocation {
-                            Text("Tap to place pin")
+                            Text("Tap to place MelodyPin")
                                 .padding()
                                 .background(Color.white.opacity(0.8))
                                 .cornerRadius(8)
