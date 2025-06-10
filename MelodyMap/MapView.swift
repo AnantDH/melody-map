@@ -21,18 +21,14 @@ struct MapView: View {
     @State private var visibleRegion: MKCoordinateRegion?
     @StateObject private var audioPlayer = AudioPlayerManager()
     @State private var selectedPin: MelodyPin?
-    @State private var showingSongDetails = false
 
     var body: some View {
         NavigationView {
             ZStack {
-                Map(position: $cameraPosition) {
-                    ForEach(pins) { pin in
-                        Annotation(pin.song.title, coordinate: pin.coordinate) {
-                            Button(action: {
-                                selectedPin = pin
-                                showingSongDetails = true
-                            }) {
+                MapReader { proxy in
+                    Map(position: $cameraPosition) {
+                        ForEach(pins) { pin in
+                            Annotation(pin.song.title, coordinate: pin.coordinate) {
                                 VStack {
                                     Image(systemName: audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                                         .font(.title2)
@@ -41,35 +37,36 @@ struct MapView: View {
                                         .scaleEffect(audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? 1.2 : 1.0)
                                         .animation(.easeInOut(duration: 0.2), value: audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying)
                                 }
+                                .contentShape(Rectangle()) // larger tap area for taps outside the icon
+                                .onTapGesture {
+                                    selectedPin = pin
+                                }
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                }
-                .mapStyle(.standard)
-                .onTapGesture {
-                    guard isSelectingLocation else { return }
-                    // Use the current map center as the selected location
-                    if let region = visibleRegion {
-                        selectedLocation = region.center
+                    .mapStyle(.standard)
+                    .onTapGesture(perform: { screenPoint in
+                        guard isSelectingLocation else { return }
+                        let coordinate = proxy.convert(screenPoint, from: .local)
+                        selectedLocation = coordinate
                         showingAddPin = true
                         isSelectingLocation = false
+                    })
+                    .onMapCameraChange { context in
+                        visibleRegion = context.region
                     }
-                }
-                .onMapCameraChange { context in
-                    visibleRegion = context.region
-                }
-                .overlay(
-                    Group {
-                        if isSelectingLocation {
-                            Text("Tap to place pin")
-                                .padding()
-                                .background(Color.white.opacity(0.8))
-                                .cornerRadius(8)
-                                .padding(.top, 8)
+                    .overlay(
+                        Group {
+                            if isSelectingLocation {
+                                Text("Tap to place pin")
+                                    .padding()
+                                    .background(Color.white.opacity(0.8))
+                                    .cornerRadius(8)
+                                    .padding(.top, 8)
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 VStack {
                     Spacer()
@@ -101,10 +98,8 @@ struct MapView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingSongDetails) {
-                if let pin = selectedPin {
-                    SongDetailsView(pin: pin, audioPlayer: audioPlayer)
-                }
+            .sheet(item: $selectedPin) { pin in
+                SongDetailsView(pin: pin, audioPlayer: audioPlayer)
             }
         }
     }

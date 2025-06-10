@@ -13,53 +13,63 @@ struct HomeView: View {
     @State private var isLoading = false
     @State private var selectedPlaylist: Playlist?
     @State private var showingPlaylistDetail = false
+    @State private var userName: String = UserDefaultsService.shared.userName
     
     var body: some View {
         NavigationView {
             ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 16),
-                    GridItem(.flexible(), spacing: 16)
-                ], spacing: 16) {
-                    // Default playlists
-                    PlaylistBox(
-                        title: "Today's Top Hits",
-                        type: .topHits,
-                        onTap: { loadTopHits() }
-                    )
-                    
-                    PlaylistBox(
-                        title: "Throwbacks",
-                        type: .throwbacks,
-                        onTap: { loadThrowbacks() }
-                    )
-                    
-                    PlaylistBox(
-                        title: "Top Rap",
-                        type: .topRap,
-                        onTap: { loadTopRap() }
-                    )
-                    
-                    // Add Playlist button
-                    PlaylistBox(
-                        title: "Add Playlist",
-                        type: .custom,
-                        onTap: { showingAddPlaylist = true }
-                    )
-                    
-                    // Custom playlists
-                    ForEach(playlists.filter { $0.type == .custom }) { playlist in
-                        PlaylistBox(
-                            title: playlist.name,
-                            type: playlist.type,
-                            onTap: {
-                                selectedPlaylist = playlist
-                                showingPlaylistDetail = true
-                            }
-                        )
+                VStack(alignment: .leading, spacing: 16) {
+                    if !userName.isEmpty {
+                        Text("Hello, \(userName)")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .padding(.horizontal)
                     }
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 16),
+                        GridItem(.flexible(), spacing: 16)
+                    ], spacing: 16) {
+                        // Default playlists
+                        PlaylistBox(
+                            title: "Today's Top Hits",
+                            type: .topHits,
+                            onTap: { loadTopHits() }
+                        )
+                        
+                        PlaylistBox(
+                            title: "Throwbacks",
+                            type: .throwbacks,
+                            onTap: { loadThrowbacks() }
+                        )
+                        
+                        PlaylistBox(
+                            title: "Top Rap",
+                            type: .topRap,
+                            onTap: { loadTopRap() }
+                        )
+                        
+                        // Add Playlist button
+                        PlaylistBox(
+                            title: "Add Playlist",
+                            type: .custom,
+                            onTap: { showingAddPlaylist = true }
+                        )
+                        
+                        // Custom playlists
+                        ForEach(playlists.filter { $0.type == .custom }) { playlist in
+                            PlaylistBox(
+                                title: playlist.name,
+                                type: playlist.type,
+                                onTap: {
+                                    selectedPlaylist = playlist
+                                    showingPlaylistDetail = true
+                                }
+                            )
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("Playlists")
             .sheet(isPresented: $showingAddPlaylist) {
@@ -80,6 +90,7 @@ struct HomeView: View {
             }
             .onAppear {
                 loadPlaylists()
+                userName = UserDefaultsService.shared.userName
             }
             .overlay {
                 if isLoading {
