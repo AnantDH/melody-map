@@ -73,6 +73,26 @@ struct ProfileView: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                     }
+                    
+                    // Settings Button
+                    Button(action: {
+                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(settingsUrl)
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "gear")
+                                .foregroundColor(.blue)
+                            Text("Open Settings")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                    }
 
                     Spacer()
                 }
