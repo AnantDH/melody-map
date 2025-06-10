@@ -152,19 +152,26 @@ struct SongDetailsView: View {
                         .cornerRadius(8)
                 }
                 
-                // Play button
-                Button(action: {
-                    audioPlayer.playPause(song: pin.song)
-                }) {
-                    HStack {
-                        Image(systemName: audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        Text(audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? "Pause" : "Play Preview")
+                // Play button (disabled if no preview available)
+                if let preview = pin.song.preview, !preview.isEmpty {
+                    Button(action: {
+                        audioPlayer.playPause(song: pin.song)
+                    }) {
+                        HStack {
+                            Image(systemName: audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                            Text(audioPlayer.currentSong?.id == pin.song.id && audioPlayer.isPlaying ? "Pause" : "Play Preview")
+                        }
+                        .font(.title3)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
                     }
-                    .font(.title3)
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                } else {
+                    Text("Preview unavailable for this track")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
                 }
                 
                 Spacer()
