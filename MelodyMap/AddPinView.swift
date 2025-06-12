@@ -126,7 +126,14 @@ struct AddPinView: View {
                 
                 do {
                     let decoded = try JSONDecoder().decode(DeezerSearchResponse.self, from: data)
-                    self.results = decoded.data
+                    self.results = decoded.data.filter { song in
+                        if let urlString = song.preview,
+                           !urlString.isEmpty,
+                           URL(string: urlString) != nil {
+                            return true
+                        }
+                        return false
+                    }
                     if self.results.isEmpty {
                         errorMessage = "No songs found"
                     }
